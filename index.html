@@ -362,10 +362,10 @@ textarea{width:100%;min-height:80px;font:.8rem ui-monospace,Menlo,Consolas,monos
 
   const LS="starTestV2";
   let st={rows:{},settings:{t:[0.1,2,4],dur:2,sound:"off"},lang:"en"};
-  try{const s=JSON.parse(localStorage.getItem(LS)); if(s&&s.rows) st=Object.assign(st,s);}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem(LS));if(s&&s.rows)st=Object.assign(st,s);}catch(e){}
   const save=()=>{try{localStorage.setItem(LS,JSON.stringify(st));}catch(e){}};
    // Fixed schedule for every participant; the first alert appears almost immediately.
-   st.settings.t=[0.1,2,4]; st.settings.dur=2; st.settings.sound="off";
+   st.settings.t=[8,13,18]; st.settings.dur=2; st.settings.sound="off";
   const t=(k,v)=>{let s=(T[st.lang][k]??T.en[k]); if(v) for(const x in v) s=s.split("{"+x+"}").join(v[x]); return s;};
 
   let screen="Welcome", sess=null, timers=[], startAt=0;
