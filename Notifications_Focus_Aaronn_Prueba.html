@@ -1,0 +1,557 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Star Count Attention Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Baloo+2:wght@600;800&family=Noto+Sans+Symbols+2&display=swap">
+<style>
+/* Layout: one centered card at a time (welcome → task 1 → task 2 → thank you). Night-sky header, teal = quiet test, coral = notification test, star yellow accents. */
+:root{
+  --bg:#eef3fa; --card:#ffffff; --ink:#152238; --muted:#5a6880; --line:#d3dcea;
+  --sky:#1d3a6e; --sky-ink:#ffffff; --star:#ffc531;
+  --quiet:#0f8a7e; --quiet-soft:#e2f5f2; --noisy:#e0563b; --noisy-soft:#fdeae5;
+  --btn:#2759d6; --btn-ink:#ffffff; --cell:#f1f5fb; --good:#1b7f4b; --bad:#b3261e;
+  --toast:#1f2633; --toast-ink:#f5f7fb;
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-sym:"Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols","DejaVu Sans",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1420; --card:#18212f; --ink:#e9eef6; --muted:#9daabd; --line:#2d3a4d;
+  --sky:#142a52; --sky-ink:#ffffff; --star:#ffd257;
+  --quiet:#3cc4b4; --quiet-soft:#14302d; --noisy:#ff8366; --noisy-soft:#3a1f19;
+  --btn:#6f97ff; --btn-ink:#0b1424; --cell:#222d3d; --good:#5fcf95; --bad:#ff8a80;
+  --toast:#eef2f8; --toast-ink:#141a24; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1420; --card:#18212f; --ink:#e9eef6; --muted:#9daabd; --line:#2d3a4d;
+  --sky:#142a52; --sky-ink:#ffffff; --star:#ffd257;
+  --quiet:#3cc4b4; --quiet-soft:#14302d; --noisy:#ff8366; --noisy-soft:#3a1f19;
+  --btn:#6f97ff; --btn-ink:#0b1424; --cell:#222d3d; --good:#5fcf95; --bad:#ff8a80;
+  --toast:#eef2f8; --toast-ink:#141a24; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:17px/1.55 var(--f-body);padding-inline:16px;padding-block:0 40px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;line-height:1.15;margin:0;text-wrap:balance}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+
+/* header */
+.sky{background:var(--sky);color:var(--sky-ink);border-radius:0 0 22px 22px;padding:22px 22px 26px;position:relative;overflow:hidden;margin-inline:-16px}
+.sky .inner{max-width:760px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{font:400 2.2rem/1 var(--f-sym);color:var(--star)}
+.brand h1{font-size:clamp(1.3rem,4vw,1.7rem)}
+.brand p{font-size:.88rem;opacity:.8}
+.dots{position:absolute;inset:0;pointer-events:none;opacity:.5}
+.lang{display:flex;background:rgba(255,255,255,.12);border-radius:999px;padding:3px;position:relative}
+.lang button{border:0;background:none;color:inherit;font:700 .85rem var(--f-body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--star);color:#1b1b1b}
+
+/* progress */
+.progress{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
+.pstep{display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;color:var(--muted)}
+.pstep .b{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:2px solid var(--line);font-size:.8rem}
+.pstep.on{color:var(--ink)} .pstep.on .b{border-color:var(--btn);background:var(--btn);color:var(--btn-ink)}
+.pstep.done .b{border-color:var(--good);background:var(--good);color:#fff}
+.pline{width:24px;height:2px;background:var(--line)}
+
+/* card */
+.card{background:var(--card);border-radius:20px;padding:clamp(20px,4vw,32px);box-shadow:0 10px 30px rgba(21,34,56,.08);display:flex;flex-direction:column;gap:16px;border-top:6px solid var(--btn)}
+.card.quiet{border-top-color:var(--quiet)} .card.noisy{border-top-color:var(--noisy)}
+.badge{align-self:flex-start;font:700 .82rem var(--f-body);padding:5px 12px;border-radius:999px;background:var(--cell);color:var(--muted)}
+.badge.quiet{background:var(--quiet-soft);color:var(--quiet)} .badge.noisy{background:var(--noisy-soft);color:var(--noisy)}
+.card h2{font-size:clamp(1.5rem,4.5vw,2rem)}
+.card h2 .s{font-family:var(--f-sym);color:var(--star);font-weight:400}
+.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.howto div{background:var(--cell);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:flex-start;font-size:.95rem}
+.howto b.n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--btn);color:var(--btn-ink);display:grid;place-items:center;font-size:.85rem}
+.note{border-radius:12px;padding:10px 14px;font-size:.9rem;background:var(--cell)}
+.note.warn{background:#fff4d6;color:#5b4300}
+:root[data-theme="dark"] .note.warn{background:#3a3010;color:#ffe08a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .note.warn{background:#3a3010;color:#ffe08a}}
+
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:700}
+input,select{font:inherit;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:10px 14px}
+input.answer{font:800 1.6rem var(--f-display);max-width:260px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid color-mix(in srgb,var(--btn) 45%,transparent);outline-offset:2px}
+.btn{align-self:flex-start;font:800 1.05rem var(--f-display);letter-spacing:.04em;text-transform:uppercase;border:0;border-radius:14px;padding:12px 26px;background:var(--btn);color:var(--btn-ink);cursor:pointer;box-shadow:0 4px 0 color-mix(in srgb,var(--btn) 60%,#000)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 color-mix(in srgb,var(--btn) 60%,#000)}
+.btn.quiet{background:var(--quiet);box-shadow:0 4px 0 color-mix(in srgb,var(--quiet) 60%,#000);color:#fff}
+.btn.noisy{background:var(--noisy);box-shadow:0 4px 0 color-mix(in srgb,var(--noisy) 60%,#000);color:#fff}
+.btn.gray{background:var(--muted);box-shadow:0 4px 0 color-mix(in srgb,var(--muted) 60%,#000);color:var(--card)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.err{color:var(--bad);font-weight:700;font-size:.9rem;min-height:1.2em}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:clamp(3px,1vw,6px);width:min(100%,600px);align-self:center;user-select:none}
+.grid span{aspect-ratio:1.25;display:grid;place-items:center;background:var(--cell);border-radius:8px;font:clamp(1rem,4.6vw,1.6rem)/1 var(--f-sym);color:var(--ink)}
+
+/* summary */
+.summary{background:var(--cell);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.tbox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-size:.82rem;color:var(--muted)}
+.tag{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.tag.quiet{background:var(--quiet)} .tag.noisy{background:var(--noisy)}
+.big{font:800 2.4rem var(--f-display)}
+textarea{width:100%;min-height:80px;font:.8rem ui-monospace,Menlo,Consolas,monospace;border:2px solid var(--line);border-radius:10px;padding:8px;background:var(--card);color:var(--ink)}
+
+/* participant-only version: keep researcher panel inaccessible in normal UI */
+#resToggle,#sRes{display:none!important}
+/* researcher */
+.res-toggle{align-self:center;background:none;border:0;color:var(--muted);font:700 .9rem var(--f-body);text-decoration:underline;cursor:pointer;padding:6px}
+.bars{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.barbox{background:var(--cell);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:6.5rem 1fr 4rem;gap:8px;align-items:center;font-size:.88rem}
+.track{height:16px;background:var(--card);border-radius:8px;overflow:hidden}
+.fill{height:100%;border-radius:8px}
+.fill.quiet{background:var(--quiet)} .fill.noisy{background:var(--noisy)}
+.bar .n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.set{display:flex;gap:12px;flex-wrap:wrap}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;background:var(--cell);border-radius:14px;padding:14px}
+.filters .ftitle{flex-basis:100%;font:800 1rem var(--f-display)}
+.filters select{min-width:10rem}
+.btn.small-btn{font-size:.85rem;padding:9px 16px}
+.pill{display:inline-block;font-size:.78rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--cell)}
+.set input{width:7rem}
+
+/* toasts */
+.toasts{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:14px;display:flex;flex-direction:column;gap:8px;z-index:50;width:min(320px,calc(100vw - 28px));pointer-events:none}
+.toast{background:var(--toast);color:var(--toast-ink);border-radius:16px;padding:12px 14px;box-shadow:0 10px 28px rgba(0,0,0,.3);display:flex;gap:10px;align-items:center;animation:slide .25s ease-out}
+.toast .ic{width:36px;height:36px;border-radius:10px;background:var(--noisy);color:#fff;display:grid;place-items:center;font:800 1.1rem var(--f-display);flex:none}
+.toast b{display:block} .toast small{opacity:.7}
+@keyframes slide{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+</style>
+
+<header class="sky">
+  <svg class="dots" viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden="true">
+    <circle cx="30" cy="20" r="1.2" fill="#fff"/><circle cx="90" cy="70" r="1" fill="#fff"/><circle cx="160" cy="25" r="1.4" fill="#fff"/>
+    <circle cx="230" cy="80" r="1" fill="#fff"/><circle cx="300" cy="15" r="1.2" fill="#fff"/><circle cx="360" cy="60" r="1.5" fill="#fff"/>
+  </svg>
+  <div class="inner">
+    <div class="brand"><span class="logo" aria-hidden="true">★</span>
+      <div><h1 data-i="title"></h1><p data-i="subtitle"></p></div></div>
+    <div class="lang" role="group" aria-label="Language">
+      <button id="lang-en" aria-pressed="true">EN</button><button id="lang-es" aria-pressed="false">ES</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="margin-top:20px">
+  <div class="progress" id="progress"></div>
+
+  <!-- WELCOME -->
+  <section class="card" id="sWelcome">
+    <span class="badge" data-i="welcomeBadge"></span>
+    <h2 data-i="welcomeTitle"></h2>
+    <p data-i="welcomeText"></p>
+    <div class="howto">
+      <div><b class="n">1</b><span data-i="h1"></span></div>
+      <div><b class="n">2</b><span data-i="h2"></span></div>
+      <div><b class="n">3</b><span data-i="h3"></span></div>
+    </div>
+    <label class="f"><span data-i="codeLbl"></span>
+      <select id="pcode" style="max-width:260px"></select>
+    </label>
+    <p class="small muted" id="orderNote"></p>
+    <div class="set">
+      <label class="f"><span data-i="ageLbl"></span>
+        <input type="number" id="age" min="5" max="99" inputmode="numeric" style="width:8rem">
+      </label>
+      <label class="f"><span data-i="genderLbl"></span>
+        <select id="gender" style="min-width:12rem">
+          <option value="" data-i="pick"></option>
+          <option value="f" data-i="gF"></option>
+          <option value="m" data-i="gM"></option>
+          <option value="x" data-i="gX"></option>
+        </select>
+      </label>
+    </div>
+    <p class="err" id="welcomeErr" aria-live="polite"></p>
+    <button class="btn" id="beginBtn" data-i="beginBtn"></button>
+    <p class="note warn small" data-i="permit"></p>
+  </section>
+
+  <!-- INTRO -->
+  <section class="card" id="sIntro" hidden>
+    <span class="badge" id="introBadge"></span>
+    <h2 id="introTitle"></h2>
+    <p data-i="introText"></p>
+    <p class="note small" id="introExtra"></p>
+    <button class="btn" id="startBtn" data-i="startBtn"></button>
+  </section>
+
+  <!-- TASK -->
+  <section class="card" id="sTask" hidden>
+    <span class="badge" id="taskBadge"></span>
+    <h2><span data-i="countTitle"></span> <span class="s">★</span></h2>
+    <div class="grid" id="grid" aria-label="Symbol grid"></div>
+    <label class="f"><span data-i="howMany"></span>
+      <input type="number" id="answer" class="answer" min="0" max="100" inputmode="numeric">
+    </label>
+    <p class="err" id="err" aria-live="polite"></p>
+    <button class="btn" id="finishBtn" data-i="finishBtn"></button>
+  </section>
+
+  <!-- THANKS -->
+  <section class="card" id="sThanks" hidden>
+    <span class="badge" data-i="doneBadge"></span>
+    <h2 data-i="thanksTitle"></h2>
+    <p data-i="thanksText"></p>
+    <div class="summary">
+      <p><b data-i="partLbl"></b> <span id="sumCode"></span> &nbsp;·&nbsp; <b data-i="orderLbl"></b> <span id="sumOrder"></span> &nbsp;·&nbsp; <b data-i="ageShort"></b> <span id="sumAge"></span> &nbsp;·&nbsp; <b data-i="genderShort"></b> <span id="sumGender"></span></p>
+      <div class="tbox"><table>
+        <thead><tr><th data-i="thTest"></th><th data-i="thTime"></th><th data-i="thCount"></th><th data-i="thMist"></th></tr></thead>
+        <tbody id="sumBody"></tbody>
+      </table></div>
+    </div>
+    <div class="btns">
+      <button class="btn" id="copyOne" data-i="copyBtn"></button>
+      <button class="btn gray" id="newBtn" data-i="newBtn"></button>
+    </div>
+    <p class="note small" id="sendStatus" role="status" aria-live="polite"></p>
+    <p class="small" id="copyMsg" aria-live="polite"></p>
+    <textarea id="copyFallback" hidden readonly></textarea>
+    <p class="small muted" data-i="savedNote"></p>
+  </section>
+
+  <button class="res-toggle" id="resToggle" data-i="resOpen"></button>
+
+  <!-- RESEARCHER -->
+  <section class="card" id="sRes" hidden>
+    <span class="badge" data-i="resBadge"></span>
+    <h2 data-i="resTitle"></h2>
+    <p class="small muted" data-i="resSub"></p>
+    <div class="filters">
+      <span class="ftitle" data-i="filterTitle"></span>
+      <label class="f small"><span data-i="genderLbl"></span>
+        <select id="fGender">
+          <option value="all" data-i="all"></option>
+          <option value="f" data-i="gF"></option>
+          <option value="m" data-i="gM"></option>
+          <option value="x" data-i="gX"></option>
+        </select>
+      </label>
+      <label class="f small"><span data-i="ageGroup"></span>
+        <select id="fAge">
+          <option value="all" data-i="all"></option>
+          <option value="0-9" data-i="a1"></option>
+          <option value="10-12" data-i="a2"></option>
+          <option value="13-15" data-i="a3"></option>
+          <option value="16-18" data-i="a4"></option>
+          <option value="19-999" data-i="a5"></option>
+        </select>
+      </label>
+      <button class="btn gray small-btn" id="fReset" data-i="fReset"></button>
+    </div>
+    <p class="small" id="fInfo"></p>
+    <div id="resBars"></div>
+    <div class="tbox"><table>
+      <thead><tr><th data-i="thCode"></th><th data-i="ageShort"></th><th data-i="genderShort"></th><th data-i="thOrd"></th><th data-i="thAT"></th><th data-i="thAM"></th><th data-i="thBT"></th><th data-i="thBM"></th></tr></thead>
+      <tbody id="allBody"></tbody>
+    </table></div>
+    <div class="btns">
+      <button class="btn" id="copyAll" data-i="copyAll"></button>
+      <button class="btn gray" id="clearBtn" data-i="clearBtn"></button>
+    </div>
+    <div id="clearConfirm" class="note warn" hidden>
+      <p data-i="clearQ" style="margin-bottom:8px"></p>
+      <div class="btns"><button class="btn noisy" id="clearYes" data-i="clearYes"></button><button class="btn gray" id="clearNo" data-i="clearNo"></button></div>
+    </div>
+    <p class="small" id="allMsg" aria-live="polite"></p>
+    <textarea id="allFallback" hidden readonly></textarea>
+
+    <h3 style="margin-top:6px" data-i="setTitle"></h3>
+    <p class="note warn small" data-i="setTip"></p>
+    <div class="set">
+      <label class="f small"><span data-i="n1"></span><input type="number" id="t1" min="1"></label>
+      <label class="f small"><span data-i="n2"></span><input type="number" id="t2" min="1"></label>
+      <label class="f small"><span data-i="n3"></span><input type="number" id="t3" min="1"></label>
+      <label class="f small"><span data-i="durLbl"></span><input type="number" id="dur" min="1" max="15"></label>
+      <label class="f small"><span data-i="soundLbl"></span><select id="sound"><option value="off" data-i="off"></option><option value="on" data-i="on"></option></select></label>
+    </div>
+    <div class="btns"><button class="btn gray" id="previewBtn" data-i="previewBtn"></button></div>
+    <p class="small" id="setMsg" aria-live="polite"></p>
+    <p class="small muted" data-i="keyNote"></p>
+  </section>
+</main>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+(function(){
+  const T={
+  en:{title:"Star Count Challenge",subtitle:"Science Fair · Do notifications affect concentration?",
+    welcomeBadge:"Welcome!",welcomeTitle:"Can you find all the stars?",
+    welcomeText:"You will do <b>2 short tasks</b>. In each one, count the stars ★ as fast and as carefully as you can. In one task, pretend phone notifications will pop up. Just keep counting!",
+    h1:"Press <b>START</b> to see the shapes.",h2:"Count only the stars ★.",h3:"Type your number and press <b>FINISH</b>.",
+    codeLbl:"Participant code",beginBtn:"Let's go",
+    permit:"<b>For the researcher:</b> only test people after your teacher/school approves and families sign the permission form. Use codes, never names.",
+    oddNote:"{c} does the quiet task first, then the notification task.",evenNote:"{c} does the notification task first, then the quiet task.",
+    taskOf:"Task {n} of 2",quietName:"No notifications",noisyName:"With notifications",
+    introQuiet:"Task {n}: Quiet test",introNoisy:"Task {n}: Notification test",
+    introText:"Find and count all the stars ★ as quickly and accurately as possible. Press <b>START</b> to show the shapes and start the clock. Type your answer and press <b>FINISH</b> when you are done.",
+    extraQuiet:"This time it will be quiet. No pop-ups.",extraNoisy:"This time, some pretend notifications will pop up. Ignore them and keep counting!",
+    startBtn:"Start",countTitle:"Count the stars",howMany:"How many stars did you find?",finishBtn:"Finish",needNum:"Type a number first.",
+    doneBadge:"All done",thanksTitle:"Great job! Thank you!",thanksText:"You finished both tasks. Please show this screen to the researcher.",
+    partLbl:"Participant:",orderLbl:"Order:",thTest:"Task",thTime:"Time (sec)",thCount:"Your count",thMist:"Mistakes",
+    copyBtn:"Copy results",newBtn:"Next participant",copied:"Copied! Paste it into Excel or Google Sheets.",copyFail:"Copy was blocked. The text is selected below. Press Ctrl+C (Cmd+C on Mac).",
+    savedNote:"Mistakes = how far the count is from 20. The researcher should verify results in Google Sheets.",
+    resOpen:"For the researcher ▾",resClose:"Hide researcher area ▴",resBadge:"Researcher only",resTitle:"All results",
+    resSub:"Averages use only real saved results. Keep this area hidden while someone is taking the test.",
+    resEmpty:"No results yet.",avgTime:"Average time (sec)",avgMist:"Average mistakes",quietBar:"No notif. (A)",noisyBar:"With notif. (B)",
+    slower:"With notifications, people took <b>{d} sec longer</b> on average.",faster:"With notifications, people were <b>{d} sec faster</b> on average.",
+    moreM:"They made <b>{d} more mistakes</b> on average.",lessM:"They made <b>{d} fewer mistakes</b> on average.",sameM:"Mistakes were about the same.",
+    nPeople:"People with both tasks done: {n}",
+    thCode:"Code",thOrd:"Order",thAT:"A time",thAM:"A mistakes",thBT:"B time",thBM:"B mistakes",
+    copyAll:"Copy all results",clearBtn:"Erase all",clearQ:"Erase every result? This cannot be undone.",clearYes:"Yes, erase",clearNo:"Cancel",
+    setTitle:"Notification settings",setTip:"These times are only examples. Use the times your school approved and keep them the same for everyone.",
+    n1:"Notif. 1 (sec)",n2:"Notif. 2 (sec)",n3:"Notif. 3 (sec)",durLbl:"Shows for (sec)",soundLbl:"Sound",off:"Off",on:"Soft beep",
+    previewBtn:"Preview notifications",saved:"Saved.",bad:"Times must go up in order, like 8, 18, 28.",
+    keyNote:"Answer key: Test A = 20 stars, Test B = 20 stars.",
+    ageLbl:"Age",genderLbl:"Gender",pick:"Choose one",gF:"Girl / Female",gM:"Boy / Male",gX:"Prefer not to say",
+    needInfo:"Please write your age and choose a gender option.",badAge:"Age must be a number between 5 and 99.",
+    ageShort:"Age:",genderShort:"Gender:",
+    filterTitle:"Filter results",ageGroup:"Age group",all:"Everyone",a1:"9 or younger",a2:"10 to 12",a3:"13 to 15",a4:"16 to 18",a5:"19 or older",fReset:"Show everyone",
+    fInfo:"Showing {n} of {t} people.",fNone:"No one matches this filter yet.",
+    notifs:["New notification","Reminder","New message"],now:"now"},
+  es:{title:"Reto de Contar Estrellas",subtitle:"Feria científica · ¿Las notificaciones afectan la concentración?",
+    welcomeBadge:"¡Bienvenido!",welcomeTitle:"¿Puedes encontrar todas las estrellas?",
+    welcomeText:"Vas a hacer <b>2 tareas cortas</b>. En cada una, cuenta las estrellas ★ lo más rápido y con el mayor cuidado que puedas. En una tarea van a salir notificaciones de celular falsas. ¡Tú sigue contando!",
+    h1:"Presiona <b>EMPEZAR</b> para ver las figuras.",h2:"Cuenta solo las estrellas ★.",h3:"Escribe tu número y presiona <b>TERMINAR</b>.",
+    codeLbl:"Código del participante",beginBtn:"¡Vamos!",
+    permit:"<b>Para el investigador:</b> solo haz la prueba después de que tu maestro/escuela la apruebe y las familias firmen el permiso. Usa códigos, nunca nombres.",
+    oddNote:"{c} hace primero la tarea en silencio y luego la de notificaciones.",evenNote:"{c} hace primero la tarea de notificaciones y luego la de silencio.",
+    taskOf:"Tarea {n} de 2",quietName:"Sin notificaciones",noisyName:"Con notificaciones",
+    introQuiet:"Tarea {n}: Prueba en silencio",introNoisy:"Tarea {n}: Prueba con notificaciones",
+    introText:"Busca y cuenta todas las estrellas ★ lo más rápido y con el mayor cuidado posible. Presiona <b>EMPEZAR</b> para ver las figuras y prender el reloj. Escribe tu respuesta y presiona <b>TERMINAR</b> cuando acabes.",
+    extraQuiet:"Esta vez habrá silencio. No saldrá nada.",extraNoisy:"Esta vez saldrán algunas notificaciones falsas. ¡Ignóralas y sigue contando!",
+    startBtn:"Empezar",countTitle:"Cuenta las estrellas",howMany:"¿Cuántas estrellas encontraste?",finishBtn:"Terminar",needNum:"Primero escribe un número.",
+    doneBadge:"¡Listo!",thanksTitle:"¡Buen trabajo! ¡Gracias!",thanksText:"Terminaste las dos tareas. Enséñale esta pantalla al investigador.",
+    partLbl:"Participante:",orderLbl:"Orden:",thTest:"Tarea",thTime:"Tiempo (seg)",thCount:"Tu conteo",thMist:"Errores",
+    copyBtn:"Copiar resultados",newBtn:"Siguiente participante",copied:"¡Copiado! Pégalo en Excel o Google Sheets.",copyFail:"No se pudo copiar. El texto está seleccionado abajo. Presiona Ctrl+C (Cmd+C en Mac).",
+    savedNote:"Errores = qué tan lejos está el conteo de 20. El investigador debe verificar los resultados en Google Sheets.",
+    resOpen:"Para el investigador ▾",resClose:"Esconder área del investigador ▴",resBadge:"Solo investigador",resTitle:"Todos los resultados",
+    resSub:"Los promedios usan solo resultados reales guardados. Mantén esta área escondida mientras alguien hace la prueba.",
+    resEmpty:"Todavía no hay resultados.",avgTime:"Tiempo promedio (seg)",avgMist:"Errores promedio",quietBar:"Sin notif. (A)",noisyBar:"Con notif. (B)",
+    slower:"Con notificaciones, la gente tardó <b>{d} seg más</b> en promedio.",faster:"Con notificaciones, la gente fue <b>{d} seg más rápida</b> en promedio.",
+    moreM:"Tuvieron <b>{d} errores más</b> en promedio.",lessM:"Tuvieron <b>{d} errores menos</b> en promedio.",sameM:"Los errores fueron casi iguales.",
+    nPeople:"Personas con las dos tareas: {n}",
+    thCode:"Código",thOrd:"Orden",thAT:"Tiempo A",thAM:"Errores A",thBT:"Tiempo B",thBM:"Errores B",
+    copyAll:"Copiar todos",clearBtn:"Borrar todo",clearQ:"¿Borrar todos los resultados? No se puede deshacer.",clearYes:"Sí, borrar",clearNo:"Cancelar",
+    setTitle:"Ajustes de notificaciones",setTip:"Estos tiempos son solo ejemplos. Usa los tiempos que aprobó la escuela y que sean iguales para todos.",
+    n1:"Notif. 1 (seg)",n2:"Notif. 2 (seg)",n3:"Notif. 3 (seg)",durLbl:"Se ve por (seg)",soundLbl:"Sonido",off:"Apagado",on:"Beep suave",
+    previewBtn:"Ver notificaciones",saved:"Guardado.",bad:"Los tiempos deben subir en orden, como 8, 18, 28.",
+    keyNote:"Hoja de respuestas: Prueba A = 20 estrellas, Prueba B = 20 estrellas.",
+    ageLbl:"Edad",genderLbl:"Género",pick:"Escoge uno",gF:"Niña / Femenino",gM:"Niño / Masculino",gX:"Prefiero no decir",
+    needInfo:"Escribe tu edad y escoge una opción de género.",badAge:"La edad debe ser un número entre 5 y 99.",
+    ageShort:"Edad:",genderShort:"Género:",
+    filterTitle:"Filtrar resultados",ageGroup:"Grupo de edad",all:"Todos",a1:"9 o menos",a2:"10 a 12",a3:"13 a 15",a4:"16 a 18",a5:"19 o más",fReset:"Ver a todos",
+    fInfo:"Mostrando {n} de {t} personas.",fNone:"Todavía nadie cumple con este filtro.",
+    notifs:["Nueva notificación","Recordatorio","Nuevo mensaje"],now:"ahora"}};
+
+  // Grids copied exactly from the PDF packet (20 stars each).
+  const GRID={A:["■○◆◆▲★★●■★","●★○■●★●○▲○","■★▲■▲○▲○◆○","●●■▲▲■◆●◆★","◆○★○◆●●★○◆","▲○◆○★★★○▲★","■▲★▲●●◆■■★","○◆◆★■■▲◆○★","■▲★★◆■▲▲◆■","★○■◆●▲●●●●"],
+              B:["★■●★■★★★○○","○■◆■★▲■■■◆","▲○○■★★●○●★","◆▲○◆●◆▲●○○","▲★★■◆■■▲★■","○○◆◆▲■●■○★","★■○▲■◆★▲▲●","○○★◆★●○★●●","▲▲●★◆◆▲●◆◆","▲●●▲◆★●●◆▲"]};
+  const KEY={A:GRID.A.join("").split("★").length-1, B:GRID.B.join("").split("★").length-1};
+  const CODES=Array.from({length:25},(_,i)=>"P"+String(i+1).padStart(2,"0"));
+  const orderOf=c=>parseInt(c.slice(1),10)%2===1?["A","B"]:["B","A"];
+  const $=id=>document.getElementById(id);
+
+  const LS="starTestV2";
+  let st={rows:{},settings:{t:[0.1,2,4],dur:2,sound:"off"},lang:"en"};
+  try{const s=JSON.parse(localStorage.getItem(LS)); if(s&&s.rows) st=Object.assign(st,s);}catch(e){}
+  const save=()=>{try{localStorage.setItem(LS,JSON.stringify(st));}catch(e){}};
+   // Fixed schedule for every participant; the first alert appears almost immediately.
+   st.settings.t=[0.1,2,4]; st.settings.dur=2; st.settings.sound="off";
+  const t=(k,v)=>{let s=(T[st.lang][k]??T.en[k]); if(v) for(const x in v) s=s.split("{"+x+"}").join(v[x]); return s;};
+
+  let screen="Welcome", sess=null, timers=[], startAt=0;
+
+  function show(name){ screen=name; ["Welcome","Intro","Task","Thanks"].forEach(n=>$("s"+n).hidden=n!==name); renderProgress(); window.scrollTo({top:0}); }
+  function renderProgress(){
+    const idx = screen==="Welcome"?0 : screen==="Thanks"?3 : (sess.i+1);
+    const labels=["★",t("taskOf",{n:1}),t("taskOf",{n:2}),"✓"];
+    $("progress").innerHTML = labels.map((l,i)=>{
+      const cls = i<idx?"pstep done": i===idx?"pstep on":"pstep";
+      const txt = i===0?(st.lang==="es"?"Inicio":"Start"): i===3?(st.lang==="es"?"Gracias":"Thanks"): l;
+      return (i?'<span class="pline"></span>':'')+`<span class="${cls}"><span class="b">${i<idx?"✓":i+1}</span>${txt}</span>`;
+    }).join("");
+  }
+  function applyLang(){
+    document.documentElement.lang=st.lang;
+    document.querySelectorAll("[data-i]").forEach(el=>el.innerHTML=t(el.dataset.i));
+    $("lang-en").setAttribute("aria-pressed",st.lang==="en"); $("lang-es").setAttribute("aria-pressed",st.lang==="es");
+    $("resToggle").innerHTML=t($("sRes").hidden?"resOpen":"resClose");
+    orderNote(); renderProgress();
+    if(sess && screen==="Intro") renderIntro();
+    if(sess && screen==="Task") taskBadge();
+    if(sess && screen==="Thanks") renderThanks();
+    if(!$("sRes").hidden) renderRes();
+  }
+  $("lang-en").onclick=()=>{st.lang="en";save();applyLang();};
+  $("lang-es").onclick=()=>{st.lang="es";save();applyLang();};
+
+  // welcome
+  CODES.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c;$("pcode").appendChild(o);});
+  const nextOpen=()=>CODES.find(c=>!st.rows[c]||st.rows[c].A==null||st.rows[c].B==null)||CODES[0];
+  $("pcode").value=nextOpen();
+  function orderNote(){const c=$("pcode").value; $("orderNote").textContent=t(orderOf(c)[0]==="A"?"oddNote":"evenNote",{c});}
+  $("pcode").onchange=orderNote;
+  $("beginBtn").onclick=()=>{
+    const c=$("pcode").value, ageV=$("age").value, g=$("gender").value;
+    if(ageV===""||!g){ $("welcomeErr").textContent=t("needInfo"); return; }
+    const age=Math.round(+ageV);
+    if(!(age>=5&&age<=99)){ $("welcomeErr").textContent=t("badAge"); $("age").focus(); return; }
+    $("welcomeErr").textContent="";
+    sess={code:c,order:orderOf(c),i:0,res:{},age,gender:g};
+    st.rows[c]=Object.assign(st.rows[c]||{},{age,gender:g}); save();
+    renderIntro(); show("Intro");
+  };
+  const gName=g=>g==="f"?t("gF"):g==="m"?t("gM"):g==="x"?t("gX"):"—";
+
+  const condCls=c=>c==="A"?"quiet":"noisy";
+  function renderIntro(){
+    const c=sess.order[sess.i], n=sess.i+1;
+    $("sIntro").className="card "+condCls(c);
+    $("introBadge").className="badge "+condCls(c);
+    $("introBadge").textContent=t("taskOf",{n})+" · "+t(c==="A"?"quietName":"noisyName");
+    $("introTitle").textContent=t(c==="A"?"introQuiet":"introNoisy",{n});
+    $("introExtra").textContent=t(c==="A"?"extraQuiet":"extraNoisy");
+    $("startBtn").className="btn "+condCls(c);
+  }
+  function taskBadge(){const c=sess.order[sess.i]; $("taskBadge").className="badge "+condCls(c); $("taskBadge").textContent=t("taskOf",{n:sess.i+1})+" · "+t(c==="A"?"quietName":"noisyName");}
+  $("startBtn").onclick=()=>{
+    const c=sess.order[sess.i];
+    $("grid").innerHTML=GRID[c].map(r=>[...r].map(s=>`<span>${s}</span>`).join("")).join("");
+    $("sTask").className="card "+condCls(c); $("finishBtn").className="btn "+condCls(c);
+    taskBadge(); $("answer").value=""; $("err").textContent="";
+    show("Task");
+    sess.notifs=0; startAt=performance.now();
+    if(c==="B") st.settings.t.forEach((s,i)=>timers.push(setTimeout(()=>{toast(i);sess.notifs++;},s*1000)));
+  };
+  function stopTimers(){timers.forEach(clearTimeout);timers=[];$("toasts").innerHTML="";}
+  $("finishBtn").onclick=()=>{
+    const v=$("answer").value;
+    if(v===""||isNaN(+v)){ $("err").textContent=t("needNum"); $("answer").focus(); return; }
+    const time=Math.round((performance.now()-startAt)/100)/10, c=sess.order[sess.i], ans=Math.round(+v);
+    stopTimers();
+    sess.res[c]={time,count:ans,mist:Math.abs(ans-KEY[c]),notifs:c==="B"?sess.notifs:null};
+    st.rows[sess.code]=Object.assign(st.rows[sess.code]||{},{[c]:sess.res[c]}); save();
+    sess.i++;
+    if(sess.i<2){ renderIntro(); show("Intro"); } else { renderThanks(); show("Thanks"); sendResults(); }
+  };
+  $("answer").addEventListener("keydown",e=>{ if(e.key==="Enter") $("finishBtn").click(); });
+
+  function renderThanks(){
+    $("sumCode").textContent=sess.code; $("sumOrder").textContent=sess.order.join(" → ");
+    $("sumAge").textContent=sess.age; $("sumGender").textContent=gName(sess.gender);
+    $("sumBody").innerHTML=sess.order.map(c=>{const r=sess.res[c];
+      return `<tr><td><span class="tag ${condCls(c)}"></span>${c}: ${t(c==="A"?"quietName":"noisyName")}</td><td>${r.time.toFixed(1)}</td><td>${r.count}</td><td>${r.mist}</td></tr>`;}).join("");
+  }
+   // Send a completed pair of results to the user's Google Apps Script web app.
+   // no-cors lets a static page POST to Apps Script, but the browser cannot
+   // read the server response; confirm arrival in the private spreadsheet.
+   const RESULTS_ENDPOINT="https://script.google.com/macros/s/AKfycbw7e4N1GRwuaTAysj16ThGM9ldmmCHyYuaVHjnirgzkg3NgzgX9X22XRaTQrFQrnCULXg/exec";
+   async function sendResults(){
+     const r=sess.res;
+     const payload={participant:sess.code,age:sess.age,gender:sess.gender,
+       order:sess.order.join("-"),timeA:r.A.time,errorsA:r.A.mist,
+       timeB:r.B.time,errorsB:r.B.mist};
+     const status=$("sendStatus");
+     status.textContent=st.lang==="es"?"Enviando resultados…":"Sending results…";
+     try{
+       await fetch(RESULTS_ENDPOINT,{
+         method:"POST",mode:"no-cors",redirect:"follow",
+         headers:{"Content-Type":"text/plain;charset=UTF-8"},
+         body:JSON.stringify(payload),keepalive:true
+       });
+       status.textContent=st.lang==="es"
+         ?"Envío realizado. El investigador debe confirmar que llegó a Google Sheets."
+         :"Submission sent. The researcher must confirm it arrived in Google Sheets.";
+     }catch(e){
+       status.textContent=st.lang==="es"
+         ?"No se pudo enviar. Muestra esta pantalla al investigador y conserva los resultados."
+         :"Could not send. Show this screen to the researcher and keep your results.";
+     }
+   }
+
+  function copyText(text,msgEl,fb){
+    const fail=()=>{fb.value=text;fb.hidden=false;fb.select();msgEl.textContent=t("copyFail");};
+    try{navigator.clipboard.writeText(text).then(()=>{fb.hidden=true;msgEl.textContent=t("copied");}).catch(fail);}catch(e){fail();}
+  }
+  $("copyOne").onclick=()=>{
+    const r=sess.res;
+    const csv="Code,Age,Gender,Order,A Time (sec),A Mistakes,B Time (sec),B Mistakes\n"+[sess.code,sess.age,gName(sess.gender),sess.order.join("-"),r.A.time,r.A.mist,r.B.time,r.B.mist].join(",");
+    copyText(csv,$("copyMsg"),$("copyFallback"));
+  };
+  $("newBtn").onclick=()=>{ sess=null; $("age").value=""; $("gender").value=""; $("copyMsg").textContent=""; $("sendStatus").textContent=""; $("copyFallback").hidden=true; $("pcode").value=nextOpen(); orderNote(); show("Welcome"); };
+
+  // toasts
+  let ac=null;
+  function beep(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=880;g.gain.setValueAtTime(.0001,ac.currentTime);g.gain.exponentialRampToValueAtTime(.15,ac.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+.35);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+.4);}catch(e){}}
+  function toast(i){
+    const d=document.createElement("div");d.className="toast";
+    d.innerHTML=`<span class="ic">!</span><div><b>${T[st.lang].notifs[i]}</b><small>${t("now")}</small></div>`;
+    $("toasts").appendChild(d); if(st.settings.sound==="on") beep();
+    setTimeout(()=>d.remove(),st.settings.dur*1000);
+  }
+
+  // researcher
+  $("resToggle").onclick=()=>{};
+  const mean=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+  function passes(r){
+    const fg=$("fGender").value, fa=$("fAge").value;
+    if(fg!=="all" && r.gender!==fg) return false;
+    if(fa!=="all"){ const [lo,hi]=fa.split("-").map(Number); if(!(r.age>=lo&&r.age<=hi)) return false; }
+    return true;
+  }
+  const filtering=()=>$("fGender").value!=="all"||$("fAge").value!=="all";
+  $("fGender").onchange=renderRes; $("fAge").onchange=renderRes;
+  $("fReset").onclick=()=>{ $("fGender").value="all"; $("fAge").value="all"; renderRes(); };
+  function renderRes(){
+    const tested=CODES.map(c=>[c,st.rows[c]||{}]).filter(([,r])=>r.A||r.B);
+    const rows=filtering() ? tested.filter(([,r])=>passes(r)) : CODES.map(c=>[c,st.rows[c]||{}]);
+    $("fInfo").textContent = filtering() ? (rows.length ? t("fInfo",{n:rows.length,t:tested.length}) : t("fNone")) : "";
+    $("allBody").innerHTML=rows.map(([c,r])=>`<tr><td><b>${c}</b></td><td>${r.age??"—"}</td><td>${r.gender?`<span class="pill">${gName(r.gender)}</span>`:"—"}</td><td>${orderOf(c).join("-")}</td><td>${r.A?r.A.time.toFixed(1):"—"}</td><td>${r.A?r.A.mist:"—"}</td><td>${r.B?r.B.time.toFixed(1):"—"}</td><td>${r.B?r.B.mist:"—"}</td></tr>`).join("");
+    const A=rows.filter(([,r])=>r.A).map(([,r])=>r.A), B=rows.filter(([,r])=>r.B).map(([,r])=>r.B);
+    if(!A.length&&!B.length){ $("resBars").innerHTML=`<p class="muted">${t("resEmpty")}</p>`; return; }
+    const bar=(lbl,a,b)=>{const ma=mean(a),mb=mean(b),mx=Math.max(ma||0,mb||0)||1,f=x=>x==null?"—":x.toFixed(1);
+      return `<div class="barbox"><b>${lbl}</b>
+      <div class="bar"><span>${t("quietBar")}</span><div class="track"><div class="fill quiet" style="width:${(ma||0)/mx*100}%"></div></div><span class="n">${f(ma)}</span></div>
+      <div class="bar"><span>${t("noisyBar")}</span><div class="track"><div class="fill noisy" style="width:${(mb||0)/mx*100}%"></div></div><span class="n">${f(mb)}</span></div></div>`;};
+    let words="";
+    if(A.length&&B.length){
+      const dt=mean(B.map(x=>x.time))-mean(A.map(x=>x.time)), dm=mean(B.map(x=>x.mist))-mean(A.map(x=>x.mist));
+      words=t(dt>=0?"slower":"faster",{d:Math.abs(dt).toFixed(1)})+" "+(Math.abs(dm)<0.1?t("sameM"):t(dm>0?"moreM":"lessM",{d:Math.abs(dm).toFixed(1)}));
+    }
+    const both=rows.filter(([,r])=>r.A&&r.B).length;
+    $("resBars").innerHTML=`<div class="bars">${bar(t("avgTime"),A.map(x=>x.time),B.map(x=>x.time))}${bar(t("avgMist"),A.map(x=>x.mist),B.map(x=>x.mist))}</div>
+      ${words?`<p class="note" style="margin-top:12px">${words}</p>`:""}<p class="small muted" style="margin-top:8px">${t("nPeople",{n:both})}</p>`;
+  }
+  $("copyAll").onclick=()=>{
+    const csv="Code,Age,Gender,Order,A Time (sec),A Count,A Mistakes,B Time (sec),B Count,B Mistakes,B Notifications Shown\n"+CODES.map(c=>{const r=st.rows[c]||{};
+      return [c,r.age??"",r.gender?gName(r.gender):"",orderOf(c).join("-"),r.A?.time??"",r.A?.count??"",r.A?.mist??"",r.B?.time??"",r.B?.count??"",r.B?.mist??"",r.B?.notifs??""].join(",");}).join("\n");
+    copyText(csv,$("allMsg"),$("allFallback"));
+  };
+  $("clearBtn").onclick=()=>$("clearConfirm").hidden=false;
+  $("clearNo").onclick=()=>$("clearConfirm").hidden=true;
+  $("clearYes").onclick=()=>{st.rows={};save();$("clearConfirm").hidden=true;renderRes();$("pcode").value="P01";orderNote();};
+
+  const S=st.settings;
+  $("t1").value=S.t[0];$("t2").value=S.t[1];$("t3").value=S.t[2];$("dur").value=S.dur;$("sound").value=S.sound;
+  ["t1","t2","t3","dur","sound"].forEach(id=>$(id).onchange=()=>{
+    const tt=[+$("t1").value,+$("t2").value,+$("t3").value];
+    if(tt.some(x=>!(x>0))||!(tt[0]<tt[1]&&tt[1]<tt[2])){$("setMsg").textContent=t("bad");$("setMsg").style.color="var(--bad)";return;}
+    S.t=tt;S.dur=Math.min(15,Math.max(1,+$("dur").value||4));S.sound=$("sound").value;save();
+    $("setMsg").textContent=t("saved");$("setMsg").style.color="var(--good)";
+  });
+  $("previewBtn").onclick=()=>[0,1,2].forEach(i=>setTimeout(()=>toast(i),i*700));
+
+  applyLang(); show("Welcome");
+})();
+</script>
+
+</body></html>
